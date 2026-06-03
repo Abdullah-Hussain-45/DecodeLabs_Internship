@@ -4,6 +4,7 @@
 ║         Refactored, Secured, Optimized & Feature-Rich           ║
 ╚══════════════════════════════════════════════════════════════════╝
 
+
 Architecture:
   - SessionManager  : Centralised session-state bootstrap & guards
   - WeatherService  : Geocoding + forecast API wrapper
