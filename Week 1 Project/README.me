@@ -1,0 +1,88 @@
+# Rule-Based Personal Assistant Chatbot 🤖
+
+A lightweight, high-performance, rule-based AI Personal Assistant implemented in Python. This project demonstrates foundational natural language processing (NLP) pipelines, input normalization techniques, and optimized dictionary-based routing mechanisms to achieve deterministic, ultra-fast responses.
+
+## 🚀 Core Features
+
+- **High-Speed Execution Engine:** Combines $O(1)$ direct dictionary lookups with priority phrase matching to keep computational execution fast and predictable.
+- **Robust Text Normalization:** Cleans user strings dynamically by forcing lowercase processing and stripping trailing punctuation characters (`?!.,`) to prevent matching failures.
+- **Dynamic DateTime Integration:** Leverages Python's native `datetime` library to render the exact time and customizable date configurations on request.
+- **Dual-Style Date Engine:** Parses contextual keywords to toggle output presentation seamlessly between a human-readable long format (*e.g., Wednesday, June 17, 2026*) and a compact numerical short format (*e.g., 17-06-2026*).
+- **Infinite Lifecycle Loop:** Includes a clean runtime state-machine check to handle continuous console communication and safe application tear-downs via `exit` or `quit` anchors.
+
+---
+
+## 🛠️ Project Architecture
+
+The bot uses a **Hybrid Pipeline Matcher** layout to process expressions down an intentional priority matrix:
+
+1. **Normalization Pipeline:** Lowercases the input stream and strips common terminal punctuation marks.
+2. **Intent Priority Evaluation:** Scans the input string against highly specific action phrases sequentially.
+3. **Parameter Extraction:** Validates secondary structural context words (like `short` vs `long`) to tune the final payload.
+4. **Graceful Fallback:** Catches all remaining undefined entries with a generic fallback handler to prevent execution trace exceptions.
+
+---
+
+## 💻 Source Implementation
+
+Save the following implementation code to a file named `assistant.py`:
+
+```python
+from datetime import datetime
+import sys
+
+def handle_greetings():
+    return "Chatbot: Hi! How can I assist you today?"
+    
+def handle_time():
+    now = datetime.now()
+    return f"Chatbot: The current time is {now.strftime('%I:%M %p')}."
+
+def handle_date(style="long"):
+    now = datetime.now()
+    if style == "short":
+        formatted_date = now.strftime("%d-%m-%Y")
+    else:
+        formatted_date = now.strftime("%A, %B %d, %Y")
+    return f"Chatbot: Today's date is {formatted_date}."
+
+def handle_fallback():
+    return "Chatbot: Command not understood."
+
+def print_banner():
+    print("=" * 45)
+    print(f"{'PERSONAL ASSISTANT CHATBOT':^45}")
+    print("=" * 45)
+
+if __name__ == "__main__":
+    print_banner()
+    
+    while True:
+        try:
+            # 1. Capture and Normalize User Input
+            user_input = input("\nYou: ").lower().strip("?!., ")
+            
+            # 2. Check for Lifecycle Termination
+            if user_input in ["exit", "quit"]:
+                print("Chatbot: Good bye! Have a good day.")
+                break
+                
+            # 3. Intent & Phrase Routing Matrix
+            if "date" in user_input or "day" in user_input:
+                if "short" in user_input or "numerical" in user_input:
+                    output_text = handle_date(style="short")
+                else:
+                    output_text = handle_date(style="long")
+            elif "time" in user_input or "clock" in user_input or "now" in user_input:
+                output_text = handle_time()
+            elif any(greet in user_input for greet in ["hello", "hi", "hey"]):
+                output_text = handle_greetings()
+            else:
+                output_text = handle_fallback()
+                
+            # 4. Render Output Payload
+            print(output_text)
+            
+        except (KeyboardInterrupt, EOFError):
+            print("\nChatbot: Program interrupted. Goodbye!")
+            sys.exit(0)
