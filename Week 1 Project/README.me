@@ -1,88 +1,106 @@
-# Rule-Based Personal Assistant Chatbot 🤖
+# 🤖 NEXUS AI — Enterprise Personal Assistant v2.0
 
-A lightweight, high-performance, rule-based AI Personal Assistant implemented in Python. This project demonstrates foundational natural language processing (NLP) pipelines, input normalization techniques, and optimized dictionary-based routing mechanisms to achieve deterministic, ultra-fast responses.
-
-## 🚀 Core Features
-
-- **High-Speed Execution Engine:** Combines $O(1)$ direct dictionary lookups with priority phrase matching to keep computational execution fast and predictable.
-- **Robust Text Normalization:** Cleans user strings dynamically by forcing lowercase processing and stripping trailing punctuation characters (`?!.,`) to prevent matching failures.
-- **Dynamic DateTime Integration:** Leverages Python's native `datetime` library to render the exact time and customizable date configurations on request.
-- **Dual-Style Date Engine:** Parses contextual keywords to toggle output presentation seamlessly between a human-readable long format (*e.g., Wednesday, June 17, 2026*) and a compact numerical short format (*e.g., 17-06-2026*).
-- **Infinite Lifecycle Loop:** Includes a clean runtime state-machine check to handle continuous console communication and safe application tear-downs via `exit` or `quit` anchors.
+NEXUS AI is a refactored, highly optimized, secure, and feature-rich rule-based AI chatbot built entirely in Python using **Streamlit**. It functions as a centralized personal productivity dashboard, combining multi-step dialogue management with utility tools, live third-party integrations, and data persistence—all contained within a highly scannable, custom-themed UI.
 
 ---
 
-## 🛠️ Project Architecture
+## 🚀 Features
 
-The bot uses a **Hybrid Pipeline Matcher** layout to process expressions down an intentional priority matrix:
+### 🌤️ Live Integrations
+* **Real-time Weather:** Fetches live weather diagnostics, UV Index, precipitation, and sunrise/sunset timings via the Open-Meteo API (geocoding automated, zero API keys required). Fully cached for optimal performance.
 
-1. **Normalization Pipeline:** Lowercases the input stream and strips common terminal punctuation marks.
-2. **Intent Priority Evaluation:** Scans the input string against highly specific action phrases sequentially.
-3. **Parameter Extraction:** Validates secondary structural context words (like `short` vs `long`) to tune the final payload.
-4. **Graceful Fallback:** Catches all remaining undefined entries with a generic fallback handler to prevent execution trace exceptions.
+### 🧮 Multi-Step Dialogue Calculators (FSM)
+* **Core Math:** Step-by-step operand processing for Addition, Subtraction, Multiplication, Division, Powers, and Modulo.
+* **Financial Suite:** Full Loan EMI and Compound Interest calculators.
+* **Health & Academics:** Body Mass Index (BMI) classifier (WHO standard) and weighted GPA calculators.
+* **Converters:** Offline currency exchange table and 10 distinct physical unit conversions (Weight, Length, Temp, Volume).
+
+### 📋 Productivity & Data Management (In-Memory CRUD)
+* **To-Do List:** Append, toggle completions, view, or remove tasks via fuzzy-text matching or ID indexes.
+* **Jot Notes:** Chronological scratchpad tagged by categories.
+* **Expense Tracker:** Logs daily financial costs, generating automated aggregate category summaries and spending metrics.
+* **Habit Tracker:** Calculates rolling consecutive streaks and total checkboxes per habit.
+* **Pomodoro Timer:** Built-in 25-minute focus clock.
+
+### 🔐 Security & Engineering Enhancements
+* **Input Sanitization:** Regex-driven control-character scrubbing and strict string padding/length capping to prevent payload memory bloating.
+* **Mathematical Guardrails:** Built-in `NaN` and `Infinity` parsing filters to completely block downstream arithmetic application failures.
+* **Sliding-Window Rate Limiter:** Protects application memory and runtime states by capping messaging frequencies to 30 requests per minute per session.
 
 ---
 
-## 💻 Source Implementation
+## 🏗️ System Architecture
 
-Save the following implementation code to a file named `assistant.py`:
+NEXUS AI adheres to a modular design philosophy, separating concerns between state, processing logic, external services, and representation layers:
 
-```python
-from datetime import datetime
-import sys
+┌─────────────────────────────────────────────────────────────┐
+│                         UIRenderer                          │
+│         (Custom CSS Injector & Streamlit Interface)        │
+└──────────────────────────────┬──────────────────────────────┘
+│ User Input / Streamlit Rerun
+┌──────────────────────────────▼──────────────────────────────┐
+│                        CommandRouter                        │
+│     (Dialogue FSM Override + Intent Pattern Regex Matcher)   │
+└──────┬───────────────────────┬───────────────────────┬──────┘
+│                       │                       │
+┌──────▼───────┐        ┌──────▼───────┐        ┌──────▼───────┐
+│ WeatherServ. │        │   ToolBox    │        │  DataManager │
+│ (Geocoding / │        │ (Stateless   │        │ (In-Memory   │
+│ Meteo API)   │        │ Computations)│        │ CRUD Lists)  │
+└──────┬───────┘        └──────┬───────┘        └──────┬───────┘
+│                       │                       │
+┌──────┴───────────────────────┴───────────────────────┴──────┐
+│                 SessionManager & RateLimiter                │
+│            (Timestamps / Session State Storage)             │
+└─────────────────────────────────────────────────────────────┘
 
-def handle_greetings():
-    return "Chatbot: Hi! How can I assist you today?"
-    
-def handle_time():
-    now = datetime.now()
-    return f"Chatbot: The current time is {now.strftime('%I:%M %p')}."
 
-def handle_date(style="long"):
-    now = datetime.now()
-    if style == "short":
-        formatted_date = now.strftime("%d-%m-%Y")
-    else:
-        formatted_date = now.strftime("%A, %B %d, %Y")
-    return f"Chatbot: Today's date is {formatted_date}."
+* **`SessionManager`:** Boots, updates, and trims dialogue history to a maximum window of 200 responses to prevent memory leaks.
+* **`CommandRouter`:** Manages active multi-step operations using a finite state machine layout (`dialogue_mode`) alongside classic Regex keyword identification layers.
+* **`ToolBox`:** Houses pure arithmetic calculations completely free of Streamlit UI dependencies or tracking side effects.
+* **`UIRenderer`:** Injects custom dark-mode styled HTML structures into native Streamlit blocks to produce a custom look and feel.
 
-def handle_fallback():
-    return "Chatbot: Command not understood."
+---
 
-def print_banner():
-    print("=" * 45)
-    print(f"{'PERSONAL ASSISTANT CHATBOT':^45}")
-    print("=" * 45)
+## 🛠️ Installation & Setup
 
-if __name__ == "__main__":
-    print_banner()
-    
-    while True:
-        try:
-            # 1. Capture and Normalize User Input
-            user_input = input("\nYou: ").lower().strip("?!., ")
-            
-            # 2. Check for Lifecycle Termination
-            if user_input in ["exit", "quit"]:
-                print("Chatbot: Good bye! Have a good day.")
-                break
-                
-            # 3. Intent & Phrase Routing Matrix
-            if "date" in user_input or "day" in user_input:
-                if "short" in user_input or "numerical" in user_input:
-                    output_text = handle_date(style="short")
-                else:
-                    output_text = handle_date(style="long")
-            elif "time" in user_input or "clock" in user_input or "now" in user_input:
-                output_text = handle_time()
-            elif any(greet in user_input for greet in ["hello", "hi", "hey"]):
-                output_text = handle_greetings()
-            else:
-                output_text = handle_fallback()
-                
-            # 4. Render Output Payload
-            print(output_text)
-            
-        except (KeyboardInterrupt, EOFError):
-            print("\nChatbot: Program interrupted. Goodbye!")
-            sys.exit(0)
+### Prerequisites
+Make sure you have Python 3.8+ installed on your operating system.
+
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/yourusername/nexus-ai.git](https://github.com/yourusername/nexus-ai.git)
+cd nexus-ai
+2. Install Dependencies
+Install the required packages using pip:
+
+Bash
+pip install streamlit requests
+(Optional: Install psutil if you want live CPU, RAM, and Disk hardware metrics via the system command)
+
+Bash
+pip install psutil
+3. Run the Application
+Execute the Streamlit framework pointing to the main file:
+
+Bash
+streamlit run Rule_based_AI_Chatbot.py
+📖 Sample Commands
+Simply type any of the following directly into the chat input field:
+
+help — Brings up the complete interactive menu block.
+
+weather — Prompts the system to fetch conditions for a specific city.
+
+add or multiply — Triggers step-by-step math workflows.
+
+todo / todo view / todo done 1 — Interface with the productivity system.
+
+expense — Record a monetary entry.
+
+quote — Displays a randomized professional programming or philosophical quote.
+
+system — Inspect internal execution architecture performance (OS, Python version, hardware load).
+
+📄 License
+This project is open-source software available under the MIT License.
